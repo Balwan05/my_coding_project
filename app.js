@@ -1,153 +1,121 @@
 let questions = [];
-let correctAnswers = [];
 let current = 0;
-let answers = {};
-let score = 0;
+let answers = {}; // id -> selected option text
+let totalTime = 5 * 60; // seconds (change if you want)
 let timerInterval = null;
-let timeLeft = 300; // 5 minutes
 
-// ------------------------------
-// LOAD QUESTIONS + ANSWERS
-// ------------------------------
-async function loadQuestions() {
-    const res = await fetch("questions.json");
-    questions = await res.json();
+async function fetchQuestions(){
+  const res = await fetch("/api/questions");
+  questions = await res.json();
+  renderQuestion();
+  updateProgress();
+  startTimer();
 }
 
-async function loadCorrectAnswers() {
-    const res = await fetch("answers_20251117_231902.txt");
-    const text = await res.text();
-    correctAnswers = text.split("\n").map(a => a.trim());
-}
-
-// ------------------------------
-// START QUIZ
-// ------------------------------
-async function startQuiz() {
-    await loadQuestions();
-    await loadCorrectAnswers();
-    renderQuestion();
-    startTimer();
-    updateProgress();
-}
-
-// ------------------------------
-// RENDER QUESTION
-// ------------------------------
-function renderQuestion() {
-    const q = questions[current];
-    document.getElementById("qtext").innerText = Q${current + 1}. ${q.q};
-
-    const opts = document.getElementById("options");
-    opts.innerHTML = "";
-
-    q.options.forEach(opt => {
-        const div = document.createElement("div");
-        div.className = "option";
-        div.innerText = opt;
-
-        if (answers[current] === opt) div.classList.add("selected");
-
-        div.onclick = () => {
-            answers[current] = opt;
-            document.querySelectorAll(".option").forEach(e => e.classList.remove("selected"));
-            div.classList.add("selected");
-        };
-
-        opts.appendChild(div);
-    });
-}
-
-// ------------------------------
-// NAVIGATION
-// ------------------------------
-function nextQ() {
-    if (current < questions.length - 1) {
-        current++;
-        renderQuestion();
-        updateProgress();
-    } else {
-        finishQuiz();
+function renderQuestion(){
+  if (!questions.length) return;
+  const q = questions[current];
+  document.getElementById("qtext").innerText = Q${current+1}. ${q.q};
+  const opts = document.getElementById("options");
+  opts.innerHTML = "";
+  q.options.forEach(opt=>{
+    const div = document.createElement("div");
+    div.className = "option";
+    if (answers[q.id] === opt) div.classList.add("selected");
+    div.innerText = opt;
+    div.onclick = () => {
+      answers[q.id] = opt;
+      document.querySelectorAll(".option").forEach(o=>o.classList.remove("selected"));
+      div.classList.add("selected");
+      saveLocal();
     }
+    // small stagger animation
+    div.style.opacity = 0;
+    opts.appendChild(div);
+    setTimeout(()=>{ div.style.opacity = 1; div.style.transform = 'translateY(0)'; }, 50 + Math.random()*200);
+  });
+  updateProgress();
 }
 
-function prevQ() {
-    if (current > 0) {
-        current--;
-        renderQuestion();
-        updateProgress();
+function prev(){
+  if (current>0){ current--; renderQuestion(); }
+}
+function nextQ(){
+  if (current < questions.length-1){ current++; renderQuestion(); }
+}
+function updateProgress(){
+  const bar = document.getElementById("bar");
+  const percent = ((current+1)/Math.max(1,questions.length))*100;
+  bar.style.width = percent + "%";
+}
+
+function startTimer(){
+  let left = totalTime;
+  const el = document.getElementById("timer");
+  if (!el) return;
+  timerInterval = setInterval(()=>{
+    left--;
+    const mm = String(Math.floor(left/60)).padStart(2,"0");
+    const ss = String(left%60).padStart(2,"0");
+    el.innerText = ${mm}:${ss};
+    if (left<=0){
+      clearInterval(timerInterval);
+      submitExam();
     }
+  }, 1000);
 }
 
-function updateProgress() {
-    const bar = document.getElementById("bar");
-    bar.style.width = ((current + 1) / questions.length) * 100 + "%";
+function saveLocal(){
+  try{ localStorage.setItem("neonexam_answers", JSON.stringify(answers)); }catch(e){}
 }
 
-// ------------------------------
-// TIMER
-// ------------------------------
-function startTimer() {
-    timerInterval = setInterval(() => {
-        timeLeft--;
-        const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
-        const ss = String(timeLeft % 60).padStart(2, "0");
-        document.getElementById("timer").innerText = ${mm}:${ss};
-
-        if (timeLeft <= 0) {
-            clearInterval(timerInterval);
-            finishQuiz();
-        }
-    }, 1000);
+function loadLocal(){
+  try{ const d = JSON.parse(localStorage.getItem("neonexam_answers")||"{}"); answers = d; }catch(e){ answers = {}; }
+  renderQuestion();
 }
 
-// ------------------------------
-// FINISH QUIZ
-// ------------------------------
-function finishQuiz() {
-    clearInterval(timerInterval);
+async function submitExam(){
+  if (!confirm("Submit exam now?")) return;
+  const payload = { answers: {} };
+  questions.forEach(q=>{
+    payload.answers[String(q.id)] = answers[q.id] || "";
+  });
 
-    score = 0;
-    questions.forEach((q, index) => {
-        if (
-            answers[index] &&
-            answers[index].toLowerCase().trim() === correctAnswers[index].toLowerCase().trim()
-        ) {
-            score++;
-        }
+  const res = await fetch("/api/submit", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) { alert("Submission failed"); return; }
+  const data = await res.json();
+  showResult(data);
+}
+
+function showResult(data){
+  document.getElementById("resultPanel").classList.remove("hidden");
+  document.getElementById("scoreText").innerText = Score: ${data.score} / ${data.total}   (${data.percent}%);
+  const wl = document.getElementById("wrongList");
+  wl.innerHTML = "";
+  if (data.wrong && data.wrong.length){
+    data.wrong.forEach(w=>{
+      const p = document.createElement("p");
+      p.innerText = Q${w.id}: Correct: ${w.correct}  |  Your: ${w.given};
+      wl.appendChild(p);
     });
-
-    // hide quiz
-    document.getElementById("quiz-container").style.display = "none";
-
-    // show score
-    document.getElementById("score-page").style.display = "block";
-    document.getElementById("score-text").innerText =
-        You scored ${score} / ${questions.length};
+  } else {
+    wl.innerText = "All correct — great job!";
+  }
+  const dl = document.getElementById("downloadCsv");
+  dl.href = data.csv;
+  dl.style.display = "inline-block";
+  clearInterval(timerInterval);
 }
 
-function restartQuiz() {
-    current = 0;
-    answers = {};
-    score = 0;
-    timeLeft = 300;
-
-    document.getElementById("quiz-container").style.display = "block";
-    document.getElementById("score-page").style.display = "none";
-
-    renderQuestion();
-    startTimer();
-    updateProgress();
-}
-
-// ------------------------------
-// BUTTON EVENTS
-// ------------------------------
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("nextBtn").onclick = nextQ;
-    document.getElementById("prevBtn").onclick = prevQ;
-    document.getElementById("saveBtn").onclick = () =>
-        alert("Saved locally (not needed).");
-
-    startQuiz();
+document.addEventListener("DOMContentLoaded", ()=>{
+  document.getElementById("prevBtn").onclick = prev;
+  document.getElementById("nextBtn").onclick = nextQ;
+  document.getElementById("saveBtn").onclick = ()=>{ saveLocal(); alert("Answers saved locally"); };
+  fetchQuestions();
+  loadLocal();
 });
