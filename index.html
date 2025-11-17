@@ -1,48 +1,175 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NeonExam — Dark Modern MCQ</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="wrap">
-    <header class="top">
-      <div class="brand"><span class="neon">Neon</span>Exam</div>
-      <div id="timer" class="timer">00:00</div>
-    </header>
+let questions = [];
+let correctAnswers = [];
+let current = 0;
+let answers = {}; 
+let score = 0;
 
-    <main>
-      <!-- QUIZ CARD -->
-      <div id="card" class="card">
-        <div class="progress-wrap">
-          <div id="bar" class="bar"></div>
-        </div>
+let totalTime = 5 * 60; 
+let timerInterval = null;
 
-        <div id="questionArea" class="question-area">
-          <h2 id="qtext">Loading...</h2>
-          <div id="options" class="options"></div>
-        </div>
+// ---------------------- LOAD ANSWERS ----------------------
+async function loadAnswers() {
+    const res = await fetch("answers_20251117_231902.txt");
+    const text = await res.text();
 
-        <div class="nav">
-          <button id="prevBtn" class="btn ghost">◀ Prev</button>
-          <div class="nav-right">
-            <button id="saveBtn" class="btn ghost">Save</button>
-            <button id="nextBtn" class="btn primary">Next ▶</button>
-          </div>
-        </div>
-      </div>
+    correctAnswers = text
+        .split("\n")
+        .map(a => a.trim())
+        .filter(a => a.length > 0);
 
-      <!-- RESULT PANEL -->
-      <div id="resultPanel" class="result-panel hidden">
-        <h3>Result</h3>
-        <p id="scoreText"></p>
-        <div id="wrongList"></div>
-      </div>
-    </main>
-  </div>
+    console.log("Loaded correct answers:", correctAnswers);
+}
 
-  <script src="app.js"></script>
-</body>
-</html>
+// ---------------------- LOAD QUESTIONS ----------------------
+async function fetchQuestions() {
+    const res = await fetch("questions.json");
+    const data = await res.json();
+    questions = data;
+}
+
+// ---------------------- START QUIZ ----------------------
+async function startQuiz() {
+    await loadAnswers();
+    await fetchQuestions();
+
+    renderQuestion();
+    updateProgress();
+    startTimer();
+}
+
+// ---------------------- RENDER QUESTION ----------------------
+function renderQuestion(){
+  if (!questions.length) return;
+
+  const q = questions[current];
+
+  document.getElementById("qtext").innerText = Q${current+1}. ${q.q};
+
+  const opts = document.getElementById("options");
+  opts.innerHTML = "";
+
+  q.options.forEach(opt => {
+    const div = document.createElement("div");
+    div.className = "option";
+    
+    if (answers[current] === opt) div.classList.add("selected");
+
+    div.innerText = opt;
+    div.onclick = () => {
+      answers[current] = opt;
+      document.querySelectorAll(".option").forEach(o => o.classList.remove("selected"));
+      div.classList.add("selected");
+      saveLocal();
+    };
+
+    div.style.opacity = 0;
+    opts.appendChild(div);
+    setTimeout(() => { 
+      div.style.opacity = 1; 
+      div.style.transform = "translateY(0)"; 
+    }, 50);
+  });
+
+  updateProgress();
+}
+
+// ---------------------- NAVIGATION ----------------------
+function prev(){
+  if (current > 0){ 
+    current--; 
+    renderQuestion(); 
+  }
+}
+
+function nextQ(){
+  if (current < questions.length - 1){
+    current++; 
+    renderQuestion();
+  } else {
+    submitExam();
+  }
+}
+
+// ---------------------- PROGRESS ----------------------
+function updateProgress(){
+  const bar = document.getElementById("bar");
+  const percent = ((current+1) / Math.max(1, questions.length)) * 100;
+  bar.style.width = percent + "%";
+}
+
+// ---------------------- TIMER ----------------------
+function startTimer(){
+  let left = totalTime;
+  const el = document.getElementById("timer");
+
+  timerInterval = setInterval(() => {
+    left--;
+    const mm = String(Math.floor(left/60)).padStart(2,"0");
+    const ss = String(left%60).padStart(2,"0");
+    el.innerText = ${mm}:${ss};
+
+    if (left <= 0){
+      clearInterval(timerInterval);
+      submitExam();
+    }
+  }, 1000);
+}
+
+// ---------------------- SUBMIT (LOCAL SCORING) ----------------------
+function submitExam(){
+  if (!confirm("Submit exam now?")) return;
+
+  // calculate score
+  score = 0;
+  const wrongList = document.getElementById("wrongList");
+  wrongList.innerHTML = "";
+
+  questions.forEach((q, index) => {
+    const userAns = answers[index] || "";
+    const correct = correctAnswers[index];
+
+    if (userAns.trim().toLowerCase() === correct.trim().toLowerCase()) {
+      score++;
+    } else {
+      const p = document.createElement("p");
+      p.innerText = Q${index+1}: Correct → ${correct} | Your → ${userAns};
+      wrongList.appendChild(p);
+    }
+  });
+
+  showResultLocal();
+}
+
+// ---------------------- SHOW RESULT ----------------------
+function showResultLocal() {
+    document.getElementById("card").classList.add("hidden");
+    document.getElementById("resultPanel").classList.remove("hidden");
+
+    document.getElementById("scoreText").innerText =
+        Score: ${score} / ${questions.length};
+
+    clearInterval(timerInterval);
+}
+
+// ---------------------- LOCAL SAVE / LOAD ----------------------
+function saveLocal(){
+  localStorage.setItem("neonexam_answers", JSON.stringify(answers));
+}
+
+function loadLocal(){
+  const d = JSON.parse(localStorage.getItem("neonexam_answers") || "{}");
+  answers = d;
+}
+
+// ---------------------- INIT ----------------------
+document.addEventListener("DOMContentLoaded", () => {
+  document.getElementById("prevBtn").onclick = prev;
+  document.getElementById("nextBtn").onclick = nextQ;
+  document.getElementById("saveBtn").onclick = () => { 
+    saveLocal(); 
+    alert("Answers saved locally");
+  };
+
+  loadLocal();
+  startQuiz();
+});
