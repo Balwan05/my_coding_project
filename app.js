@@ -5,8 +5,10 @@ let totalTime = 5 * 60; // seconds (change if you want)
 let timerInterval = null;
 
 async function fetchQuestions(){
-  const res = await fetch("/api/questions");
+  const res = await 
+  fetch("questions.json");
   questions = await res.json();
+  
   renderQuestion();
   updateProgress();
   startTimer();
@@ -119,3 +121,4 @@ document.addEventListener("DOMContentLoaded", ()=>{
   fetchQuestions();
   loadLocal();
 });
+
