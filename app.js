@@ -1,4 +1,16 @@
 let correctAnswers = [];
+let correctAnswers = [];
+
+async function loadAnswers() {
+    const res = await fetch("answers_20251117_231902.txt");
+    const text = await res.text();
+
+    // Split each answer by new line
+    correctAnswers = text
+        .split("\n")
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
+}
 let questions = [];
 let current = 0;
 let answers = {}; // id -> selected option text
@@ -17,14 +29,9 @@ async function loadCorrectAnswers() {
   console.log("Loaded Correct Answers: ", correctAnswers);
 }
 
-async function fetchQuestions(){
-  await loadCorrectAnswers();
-  NEW
-
-  const res = await 
-  fetch("questions.json");
-  questions = await res.json();
-  
+async function startQuiz() {
+    await loadAnswers();      // <-- loads answers
+    await fetchQuestions();   // <-- loads questions
   renderQuestion();
   updateProgress();
   startTimer();
@@ -119,6 +126,30 @@ async function submitExam(){
   const data = await res.json();
   showResult(data);
 }
+function checkAnswer(userAnswer) {
+    const correct = correctAnswers[currentQuestionIndex];
+
+    if (userAnswer.trim().toLowerCase() === correct.trim().toLowerCase()) {
+        score++;
+    }
+
+    currentQuestionIndex++;
+
+    if (currentQuestionIndex >= questions.length) {
+        showScorePage();
+    } else {
+        renderQuestion();
+        updateProgress();
+        startTimer();
+    }
+}
+function showScorePage() {
+    document.getElementById("quiz-container").style.display = "none";
+    document.getElementById("score-page").style.display = "block";
+
+    document.getElementById("score-text").innerText =
+        You scored ${score} out of ${questions.length};
+}
 
 function showResult(data){
   document.getElementById("resultPanel").classList.remove("hidden");
@@ -140,12 +171,25 @@ function showResult(data){
   clearInterval(timerInterval);
 }
 
+function restartQuiz() {
+    score = 0;
+    currentQuestionIndex = 0;
+
+    document.getElementById("score-page").style.display = "none";
+    document.getElementById("quiz-container").style.display = "block";
+
+    renderQuestion();
+    updateProgress();
+    startTimer();
+}
+
 document.addEventListener("DOMContentLoaded", ()=>{
   document.getElementById("prevBtn").onclick = prev;
   document.getElementById("nextBtn").onclick = nextQ;
   document.getElementById("saveBtn").onclick = ()=>{ saveLocal(); alert("Answers saved locally"); };
-  fetchQuestions();
+  startQuiz();
   loadLocal();
 });
+
 
 
