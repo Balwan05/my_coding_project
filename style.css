@@ -1,0 +1,27 @@
+/* Dark neon theme */
+*{box-sizing:border-box;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial}
+body{margin:0;background:linear-gradient(180deg,#08070a,#0b0d12);color:#e6eef8;-webkit-font-smoothing:antialiased}
+.wrap{max-width:900px;margin:28px auto;padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:8px 12px}
+.brand{font-weight:800;color:#9be7ff;font-size:22px;letter-spacing:0.6px}
+.brand .neon{color:#7c3aed;text-shadow:0 0 12px rgba(124,58,237,0.6)}
+.timer{background:rgba(255,255,255,0.06);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);font-weight:700}
+.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(9,10,12,0.6);transition:transform .25s ease}
+.progress-wrap{height:8px;background:rgba(255,255,255,0.03);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.bar{height:100%;width:0;background:linear-gradient(90deg,#7c3aed,#06b6d4);transition:width .35s ease}
+.question-area h2{font-size:18px;margin:0 0 12px;color:#e6eef8}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);background:rgba(255,255,255,0.01);cursor:pointer;transition:all .12s ease;box-shadow:0 6px 18px rgba(2,6,23,0.4)}
+.option:hover{transform:translateY(-6px);box-shadow:0 18px 36px rgba(2,6,23,0.6)}
+.option.selected{background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.4)}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+.btn{padding:10px 14px;border-radius:10px;border:0;font-weight:700;cursor:pointer}
+.btn.ghost{background:transparent;color:#9be7ff;border:1px solid rgba(155,231,255,0.06)}
+.btn.primary{background:linear-gradient(90deg,#7c3aed,#06b6d4);color:#fff}
+.result-panel{background:rgba(255,255,255,0.02);padding:18px;border-radius:12px;margin-top:18px;box-shadow:0 12px 26px rgba(2,6,23,0.6)}
+.hidden{display:none}
+.link{display:inline-block;margin-top:12px;color:#7c3aed}
+@media (max-width:640px){
+  .wrap{padding:10px}
+  .card{padding:14px}
+}

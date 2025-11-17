@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>NeonExam — Dark Modern MCQ</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand"><span class="neon">Neon</span>Exam</div>
+      <div id="timer" class="timer">00:00</div>
+    </header>
+
+    <main>
+      <div id="card" class="card">
+        <div class="progress-wrap">
+          <div id="bar" class="bar"></div>
+        </div>
+
+        <div id="questionArea" class="question-area">
+          <h2 id="qtext">Loading...</h2>
+          <div id="options" class="options"></div>
+        </div>
+
+        <div class="nav">
+          <button id="prevBtn" class="btn ghost">◀ Prev</button>
+          <div class="nav-right">
+            <button id="saveBtn" class="btn ghost">Save</button>
+            <button id="nextBtn" class="btn primary">Next ▶</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="resultPanel" class="result-panel hidden">
+        <h3>Result</h3>
+        <p id="scoreText"></p>
+        <div id="wrongList"></div>
+        <a id="downloadCsv" class="link" href="#">Download CSV</a>
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
