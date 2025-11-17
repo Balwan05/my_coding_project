@@ -1,10 +1,26 @@
+let correctAnswers = [];
 let questions = [];
 let current = 0;
 let answers = {}; // id -> selected option text
 let totalTime = 5 * 60; // seconds (change if you want)
 let timerInterval = null;
 
+async function loadCorrectAnswers() {
+  const res = await
+    fetch("answers_20251117_231902.txt");
+  const text = await res.text();
+
+  correctAnswers = text
+  .split("\n")
+  .map(ans=>ans.trim())
+  .filter(ans=>ans.length > 0);
+  console.log("Loaded Correct Answers: ", correctAnswers);
+}
+
 async function fetchQuestions(){
+  await loadCorrectAnswers();
+  NEW
+
   const res = await 
   fetch("questions.json");
   questions = await res.json();
@@ -67,6 +83,16 @@ function startTimer(){
   }, 1000);
 }
 
+function checkAnswer(user Answer) {
+  const correct = correctAnswer[currentQuestionIndex];
+  if
+    (userAnswer.trim().tolowerCase() === correct.trim().tolowerCase()) {
+      score++;
+    }
+  currentQuestionIndex++;
+  loadnextQuestion();
+}
+
 function saveLocal(){
   try{ localStorage.setItem("neonexam_answers", JSON.stringify(answers)); }catch(e){}
 }
@@ -121,4 +147,5 @@ document.addEventListener("DOMContentLoaded", ()=>{
   fetchQuestions();
   loadLocal();
 });
+
 
