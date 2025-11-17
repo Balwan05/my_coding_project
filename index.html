@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>NeonExam — Dark Modern MCQ</title>
+  <title>NeonExam — MCQ Test</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="wrap">
+
+  <div class="wrap" id="quiz-container">
     <header class="top">
       <div class="brand"><span class="neon">Neon</span>Exam</div>
       <div id="timer" class="timer">00:00</div>
     </header>
 
     <main>
-      <!-- QUIZ CARD -->
       <div id="card" class="card">
         <div class="progress-wrap">
           <div id="bar" class="bar"></div>
@@ -33,14 +33,14 @@
           </div>
         </div>
       </div>
-
-      <!-- RESULT PANEL -->
-      <div id="resultPanel" class="result-panel hidden">
-        <h3>Result</h3>
-        <p id="scoreText"></p>
-        <div id="wrongList"></div>
-      </div>
     </main>
+  </div>
+
+  <!-- SCORE PAGE -->
+  <div id="score-page" class="wrap" style="display:none; text-align:center;">
+    <h1>Your Score</h1>
+    <h2 id="score-text"></h2>
+    <button onclick="restartQuiz()" class="btn primary">Restart</button>
   </div>
 
   <script src="app.js"></script>
